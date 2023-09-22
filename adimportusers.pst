@@ -1,0 +1,45 @@
+
+Import-module activedirectory
+
+
+
+$Users=Import-csv C:\Users\user\Documents\AddUsers\lista-email-corrigido.csv #Especifica arquivo CSV (Separado por vírgulas)
+$OU = " " # Unidade Organizacional que o usuário participa
+$numberSuccess = 0
+$numberFail = 0
+
+ForEach($User in $Users)
+      {
+      $Password = (ConvertTo-SecureString -AsPlainText $user.password -Force)
+
+      $Parameters = @{
+      'SamAccountName'        = $user.SamAccountName
+      'GivenName'             = $user.GivenName
+      'Name'                  = $user.Name
+      'Surname'               = $user.Surname
+      'DisplayName'           = $user.DisplayName
+      'EmailAddress'          = $user.EmailAddress
+      'UserPrincipalName'     = $user.SamAccountName+"@ad.parauapebas.pa.gov.br"
+      'Path'                  = $OU
+      'AccountPassword'       = $Password 
+      'Enabled'               = $true
+      'ChangePasswordAtLogon' = $false
+      'CannotChangePassword'  = $false
+       }
+       $username = $user.SamAccountName
+
+       if (Get-ADUser -F {SamAccountName -eq $username }) # Verifica se usuário já existe
+	    {		 
+		 Write-Warning "O usuário $username já existe no diretório, ignorando..."
+         $numberFail = $numberFail + 1
+	    }else
+        {
+         New-ADUser @Parameters
+         Write-Host "[!] Usuário $username criado com sucesso."
+         $numberSuccess = $numberSuccess + 1
+        }
+
+} # End While
+
+#Write-Host "[!] $numberSuccess Usuários criado com sucesso"  -ForegroundColor Green
+#Write-Host "[!] $numberFail Falhas" -ForegroundColor Red
